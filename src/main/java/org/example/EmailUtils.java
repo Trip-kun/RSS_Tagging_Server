@@ -5,7 +5,7 @@ import javax.mail.internet.MimeMessage;
 import java.util.Properties;
 
 public class EmailUtils {
-    public static void sendEmail(String email, String subject, String content)  throws MessagingException, SendFailedException {
+    public static void sendEmail(String email, String subject, String content)  throws MessagingException {
         final String SMTP_HOST = Config.getConfig().emailHost;
         final String SMTP_PORT = Config.getConfig().emailPort;
         final String GMAIL_USERNAME = Config.getConfig().emailUsername;
