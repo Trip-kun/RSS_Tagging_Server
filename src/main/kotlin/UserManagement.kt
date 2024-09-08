@@ -10,14 +10,14 @@ import javax.mail.internet.InternetAddress
 import javax.xml.crypto.Data
 
 fun register(context: Context) {
-    var userName: String = "";
+    var username: String = "";
     var password: String = "";
     var passwordConfirm: String= " ";
     var email: String = "";
     var emailConfirm: String= "";
     context.headerMap().forEach { (key, value) ->
         when (key) {
-            "REGISTER_username" -> userName = value
+            "REGISTER_username" -> username = value
             "REGISTER_password" -> password = value
             "REGISTER_passwordConfirm" -> passwordConfirm = value
             "REGISTER_email" -> email = value
@@ -34,12 +34,12 @@ fun register(context: Context) {
         context.result("Emails do not match.")
         return
     }
-    if (userName == "" || password == "" || email == "") {
+    if (username == "" || password == "" || email == "") {
         context.status(400)
         context.result("All fields must be filled out.")
         return
     }
-    if (userName.length < 6) {
+    if (username.length < 6) {
         context.status(400)
         context.result("Username must be at least 6 characters long.")
         return
@@ -56,7 +56,7 @@ fun register(context: Context) {
     }
     //Need to "simplify" the email to prevent duplicate accounts.
     val userDao = DatabaseUtilities.getUserDao()
-    userDao.queryForFieldValuesArgs(mapOf("userName" to userName)).firstOrNull()?.let {
+    userDao.queryForFieldValuesArgs(mapOf("username" to username)).firstOrNull()?.let {
         context.status(400)
         context.result("Username already exists.")
         return
@@ -75,7 +75,7 @@ fun register(context: Context) {
     }
 
     val user = User()
-    user.username = userName
+    user.username = username
     val hashedPassword = SecureUtilities.hash(password)
     user.hashedPassword = hashedPassword.first
     user.salt = hashedPassword.second
@@ -143,7 +143,7 @@ fun login(context: Context) {
         return
     }
     val userDao = DatabaseUtilities.getUserDao()
-    userDao.queryForFieldValuesArgs(mapOf("userName" to username)).firstOrNull()?.let {
+    userDao.queryForFieldValuesArgs(mapOf("username" to username)).firstOrNull()?.let {
         if (SecureUtilities.verifyHash(password, it.salt, it.hashedPassword)) {
             context.status(200)
             val baseAuth = SecureUtilities.generateSalt(3*Config.getConfig().saltSize)

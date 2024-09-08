@@ -27,6 +27,7 @@ dependencies {
     implementation(group: 'io.javalin.community.ssl', name: 'ssl-plugin', version: '6.3.0')
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.sun.mail:jakarta.mail:1.6.3")
+    implementation("com.rometools:rome:2.1.0")
 }
 
 test {

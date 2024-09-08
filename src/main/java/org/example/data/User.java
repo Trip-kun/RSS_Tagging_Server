@@ -27,6 +27,9 @@ public class User {
     @DatabaseField(canBeNull = true)
     public String emailVerificationSalt;
     @ForeignCollectionField(eager = true)
-    public ForeignCollection<Authentication> authentications;
-
+    public transient ForeignCollection<Authentication> authentications;
+    @ForeignCollectionField(eager = true)
+    public transient ForeignCollection<UserChannelLink> userChannelLinks;
+    @ForeignCollectionField(eager = true)
+    public transient ForeignCollection<Filter> filters;
 }

@@ -16,6 +16,10 @@ fun main() {
     .get("/login") { ctx -> login(ctx) }
     .get("/testAuthentication") { ctx -> testAuthentication(ctx) }
     .get("/verifyEmail") { ctx -> verifyEmail(ctx) }
+    .get("/createChannel") { ctx -> createChannel(ctx) }
+    .get("/getEntries") { ctx -> getEntries(ctx) }
+    .get("/createOrUpdateTag") { ctx -> createOrUpdateTag(ctx) }
+    .get("/getTags") { ctx -> getTags(ctx) }
     .start()
 }
 fun createJavalin(javalinConfig: JavalinConfig) {
