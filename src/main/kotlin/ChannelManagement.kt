@@ -3,7 +3,6 @@ package org.example
 import io.javalin.http.Context
 import org.example.data.Channel
 import org.example.data.UserChannelLink
-
 fun createChannel(context: Context) {
     val go = testAuthentication(context)
     if (!go) {
@@ -20,16 +19,15 @@ fun createChannel(context: Context) {
         context.result("Invalid URL.")
         return
     }
-    val userDao = DatabaseUtilities.getUserDao()
-    var userChannelLink: UserChannelLink?;
-    val user = userDao.queryForFieldValuesArgs(mapOf("username" to context.headerMap()["LOGIN_username"])).firstOrNull()
+    var userChannelLink: UserChannelLink?
+    val user = userDao.queryForFieldValuesArgs(mapOf("username" to context.headerMap()["LOGIN_username"]))?.firstOrNull()
     val status = fetchChannel(url.toString(), user)
     if (status.first == "success") {
         context.status(200)
         context.result("Channel added.")
         context.header("CHANNEL_id", status.second?.id.toString())
-        val userChannelLinkDao = DatabaseUtilities.getUserChannelLinkDao()
-        userChannelLink = userChannelLinkDao.queryForFieldValuesArgs(mapOf("user_id" to user?.id, "channel_id" to status.second?.id.toString())).firstOrNull()
+        userChannelLink = userChannelLinkDao.queryForFieldValuesArgs(mapOf("user_id" to user?.id, "channel_id" to status.second?.id.toString()))
+            ?.firstOrNull()
         if (userChannelLink==null) {
             userChannelLink = UserChannelLink()
         }
@@ -48,11 +46,10 @@ fun getEntries(context: Context) {
     if (!go) {
         return
     }
-    val userDao = DatabaseUtilities.getUserDao()
     val username = context.headerMap()["LOGIN_username"]
         ?: // It won't be null, as it's checked in testAuthentication.
         return
-    val user = userDao.queryForFieldValuesArgs(mapOf("username" to username)).firstOrNull()
+    val user = userDao.queryForFieldValuesArgs(mapOf("username" to username))?.firstOrNull()
     var go2 = false
     val channelId = context.headerMap()["CHANNEL_id"]
     if (channelId == null) {
@@ -67,7 +64,7 @@ fun getEntries(context: Context) {
         context.result("Invalid channel ID.")
         return
     }
-    user?.userChannelLinks?.forEach() {
+    user?.userChannelLinks?.forEach {
         println('a')
         val channel = it.channel
         if (channel != null) {
@@ -81,10 +78,12 @@ fun getEntries(context: Context) {
         context.result("You haven't subscribed to this channel.")
         return
     }
-    DatabaseUtilities.getChannelDao().queryForId(channelId.toInt())?.let {
+   channelDao.queryForId(channelId.toInt())?.let {
         val entries = it.entries
         context.status(200)
-        context.json(entries)
+       if (entries != null) {
+           context.result(gson.toJson(entries))
+       }
     } ?: run {
         context.status(400)
         context.result("Channel not found.")
@@ -95,11 +94,10 @@ fun unsubscribe(context: Context) {
     if (!go) {
         return
     }
-    val userDao = DatabaseUtilities.getUserDao()
     val username = context.headerMap()["LOGIN_username"]
         ?: // It won't be null, as it's checked in testAuthentication.
         return
-    val user = userDao.queryForFieldValuesArgs(mapOf("username" to username)).firstOrNull()
+    val user = userDao.queryForFieldValuesArgs(mapOf("username" to username))?.firstOrNull()
     var go2 = false
     val channelId = context.headerMap()["CHANNEL_id"]
     if (channelId == null) {
@@ -114,7 +112,7 @@ fun unsubscribe(context: Context) {
         context.result("Invalid channel ID.")
         return
     }
-    user?.userChannelLinks?.forEach() {
+    user?.userChannelLinks?.forEach {
         val channel = it.channel
         if (channel != null) {
             if (channel.id == channelId.toInt()) {
@@ -127,11 +125,11 @@ fun unsubscribe(context: Context) {
         context.result("You haven't subscribed to this channel.")
         return
     }
-    user?.userChannelLinks?.forEach() {
+    user?.userChannelLinks?.forEach {
         val channel = it.channel
         if (channel != null) {
             if (channel.id == channelId.toInt()) {
-                DatabaseUtilities.getUserChannelLinkDao().delete(it)
+                userChannelLinkDao.delete(it)
             }
         }
     }
@@ -144,14 +142,13 @@ fun getChannels(context: Context) {
     if (!go) {
         return
     }
-    val userDao = DatabaseUtilities.getUserDao()
     val username = context.headerMap()["LOGIN_username"]
         ?: // It won't be null, as it's checked in testAuthentication.
         return
-    val user = userDao.queryForFieldValuesArgs(mapOf("username" to username)).firstOrNull()
+    val user = userDao.queryForFieldValuesArgs(mapOf("username" to username))?.firstOrNull()
     val userChannelLinks = user?.userChannelLinks
     val channels = mutableListOf<Channel>()
-    userChannelLinks?.forEach() {
+    userChannelLinks?.forEach {
         val channel = it.channel
         if (channel != null) {
             channels.add(channel)
