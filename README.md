@@ -1,0 +1,1 @@
+This is a simple RSS parsing server with an HTTP api to retrieve the parsed data. "Tags" can be created that will automatically run filters on applicable entries based on a configurable pure-string or regex filter, tagging or not tagging the, This also supports ATOM has the backend supporting api supports it as well!
