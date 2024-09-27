@@ -209,11 +209,212 @@ fun getTaggedEntriesForUser(context: Context) {
     context.json(entriesJson)
 }
 
+fun runTag(context: Context) {
+    val go = testAuthentication(context)
+    if (!go) {
+        return
+    }
+    val filterId = context.headerMap()["TAG_id"]
+    if (filterId == null) {
+        context.status(400)
+        context.result("No filter ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(filterId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid filter ID.")
+        return
+    }
+    val filter = filterDao.queryForId(filterId.toInt())
+    if (filter == null) {
+        context.status(400)
+        context.result("Filter not found.")
+        return
+    }
+    if (filter.filterAll) {
+        val user = filter.user
+        user?.userChannelLinks?.forEach { userChannelLink ->
+            val channel = userChannelLink.channel
+            channel?.entries?.forEach { entry ->
+                runTagOnEntry(filter, entry)
+            }
+        }
+    } else {
+        filter.filterChannelLinks?.forEach { filterChannelLink ->
+            val channel = filterChannelLink.channel
+            channel?.entries?.forEach { entry ->
+                runTagOnEntry(filter, entry)
+            }
+        }
+    }
+}
+
+fun deleteTag(context: Context) {
+    val go = testAuthentication(context)
+    if (!go) {
+        return
+    }
+    val filterId = context.headerMap()["TAG_id"]
+    if (filterId == null) {
+        context.status(400)
+        context.result("No filter ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(filterId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid filter ID.")
+        return
+    }
+    val filter = filterDao.queryForId(filterId.toInt())
+    if (filter == null) {
+        context.status(400)
+        context.result("Filter not found.")
+        return
+    }
+    filterEntryLinkDao.queryForFieldValuesArgs(mapOf("filter_id" to filter.id))?.forEach {
+        filterEntryLinkDao.delete(it)
+    }
+    filterChannelLinkDao.queryForFieldValuesArgs(mapOf("filter_id" to filter.id))?.forEach {
+        filterChannelLinkDao.delete(it)
+    }
+    filterDao.delete(filter)
+    context.status(200)
+    context.result("Tag deleted.")
+}
+fun clearFilterEntries(context: Context) {
+    val go = testAuthentication(context)
+    if (!go) {
+        return
+    }
+    val filterId = context.headerMap()["TAG_id"]
+    if (filterId == null) {
+        context.status(400)
+        context.result("No filter ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(filterId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid filter ID.")
+        return
+    }
+    val filter = filterDao.queryForId(filterId.toInt())
+    if (filter == null) {
+        context.status(400)
+        context.result("Filter not found.")
+        return
+    }
+    filterEntryLinkDao.queryForFieldValuesArgs(mapOf("filter_id" to filter.id))?.forEach {
+        filterEntryLinkDao.delete(it)
+    }
+    context.status(200)
+    context.result("Filter entries cleared.")
+}
+fun removeSingleTagEntry(context: Context) {
+    val go = testAuthentication(context)
+    if (!go) {
+        return
+    }
+    val filterId = context.headerMap()["TAG_id"]
+    if (filterId == null) {
+        context.status(400)
+        context.result("No filter ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(filterId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid filter ID.")
+        return
+    }
+    val filter = filterDao.queryForId(filterId.toInt())
+    if (filter == null) {
+        context.status(400)
+        context.result("Filter not found.")
+        return
+    }
+    val entryId = context.headerMap()["ENTRY_id"]
+    if (entryId == null) {
+        context.status(400)
+        context.result("No entry ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(entryId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid entry ID.")
+        return
+    }
+    val entry = entryDao.queryForId(entryId.toInt())
+    if (entry == null) {
+        context.status(400)
+        context.result("Entry not found.")
+        return
+    }
+    filterEntryLinkDao.queryForFieldValuesArgs(mapOf("filter_id" to filter.id, "entry_id" to entry.id))?.forEach {
+        filterEntryLinkDao.delete(it)
+    }
+    context.status(200)
+    context.result("Entry removed from tag.")
+}
+fun addSingleTagEntry(context: Context) {
+    val go = testAuthentication(context)
+    if (!go) {
+        return
+    }
+    val filterId = context.headerMap()["TAG_id"]
+    if (filterId == null) {
+        context.status(400)
+        context.result("No filter ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(filterId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid filter ID.")
+        return
+    }
+    val filter = filterDao.queryForId(filterId.toInt())
+    if (filter == null) {
+        context.status(400)
+        context.result("Filter not found.")
+        return
+    }
+    val entryId = context.headerMap()["ENTRY_id"]
+    if (entryId == null) {
+        context.status(400)
+        context.result("No entry ID provided.")
+        return
+    }
+    try {
+        Integer.parseInt(entryId)
+    } catch (e: Exception) {
+        context.status(400)
+        context.result("Invalid entry ID.")
+        return
+    }
+    val entry = entryDao.queryForId(entryId.toInt())
+    if (entry == null) {
+        context.status(400)
+        context.result("Entry not found.")
+        return
+    }
+    val filterEntryLink = FilterEntryLink()
+    filterEntryLink.filter = filter
+    filterEntryLink.entry = entry
+    filterEntryLinkDao.create(filterEntryLink)
+    context.status(200)
+    context.result("Entry added to tag.")
+}
 // TODO: Autodelete channels and cull entries.
-// TODO: Delete tags and filter entries.
-// TODO: "Rerun tag" endpoint
-// TODO: Only run tags if entries are new
-// TODO: Option to run tags on all applicable content when created
 // TODO: Split up big methods with helper function that checks if a certain map exists in a dao query.
 // TODO: Delete users, Auto-trim entries with a configurable maximum entries per channel
 // Doing this would require moving more stuff to kotlin, as java doesn't have template functions.

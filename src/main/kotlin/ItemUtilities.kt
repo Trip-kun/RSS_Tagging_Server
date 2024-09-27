@@ -76,21 +76,33 @@ fun fetchChannel(url : String, user: User?): Pair<String, Channel?> {
     }
     return Pair("success", channel)
 }
-
+fun getFirstEntry(channel: Channel): Entry? {
+    entryDao.queryForFirst(entryDao.queryBuilder().where().eq("channel_id", channel.id).prepare())?.let {
+        return it
+    }
+    return null
+}
+private val config: Config = Config.getConfig()
 fun handleEntries(feed: SyndFeed, channel: Channel, user: User?) {
     feed.entries.forEach { syndEntry ->
+        if (entryDao.queryForFieldValuesArgs(mapOf("channel_id" to channel.id))?.size!! >config.maxEntries) {
+            val entry = getFirstEntry(channel)
+            entryDao.delete(entry)
+        }
+        ///match first entry that is in the database under this channel
+        var isNew: Boolean = true
         var entry: Entry
         entry = Entry()
         entryDao.queryForFieldValuesArgs(mapOf("url" to syndEntry.uri))?.forEach {
             if (channel == it.channel) {
                 entry = it
-                // Don't do filtering
+                isNew = false
             }
         }
         entryDao.queryForFieldValuesArgs(mapOf("title" to syndEntry.title))?.forEach {
             if (it.channel==channel) {
                 entry = it
-                // Don't do filtering
+                isNew = false
             }
         }
         entry.channel = channel
@@ -119,15 +131,17 @@ fun handleEntries(feed: SyndFeed, channel: Channel, user: User?) {
         syndEntry.modules.forEach { entry.modules += "$it, " }
         entryDao.createOrUpdate(entry)
         entryDao.refresh(entry)
-        channel.filterChannelLinks?.forEach { filterChannelLink ->
-            val filter = filterChannelLink.filter
-            if (filter != null) {
-                runTagOnEntry(filter, entry)
+        if (isNew) {
+            channel.filterChannelLinks?.forEach { filterChannelLink ->
+                val filter = filterChannelLink.filter
+                if (filter != null) {
+                    runTagOnEntry(filter, entry)
+                }
             }
-        }
-        user?.filters?.forEach {
-            if (it.filterAll) {
-                runTagOnEntry(it, entry)
+            user?.filters?.forEach {
+                if (it.filterAll) {
+                    runTagOnEntry(it, entry)
+                }
             }
         }
     }

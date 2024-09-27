@@ -8,7 +8,7 @@ fun main() {
     val config: Config = Config.getConfig()
     initDatabase()
     Javalin.create{javalinConfig -> createJavalin(javalinConfig)}
-    .get("/") { ctx -> ctx.result(config.databaseSettings.databaseURL) }
+    .get("/") { ctx -> ctx.result("Hello!") }
     .get("/register") { ctx -> register(ctx) }
     .get("/login") { ctx -> login(ctx) }
     .get("/testAuthentication") { ctx -> testAuthentication(ctx) }
@@ -20,7 +20,12 @@ fun main() {
     .get("/requestEmailAuthorization") { ctx -> requestEmailAuthorization(ctx) }
     .get("/getTaggedEntries") { ctx -> getTaggedEntriesForUser(ctx) }
     .get("/getChannels") { ctx -> getChannels(ctx) }
-    .get("unsubscribe") { ctx -> unsubscribe(ctx) }
+    .get("/unsubscribe") { ctx -> unsubscribe(ctx) }
+    .get("/runTag") { ctx -> runTag(ctx) }
+    .get("/deleteTag") { ctx -> deleteTag(ctx) }
+    .get("/clearFilterEntries") { ctx -> clearFilterEntries(ctx) }
+    .get("/removeSingleTagEntry") { ctx -> removeSingleTagEntry(ctx) }
+    .get("/addSingleTagEntry") { ctx -> addSingleTagEntry(ctx) }
     .start()
 }
 fun createJavalin(javalinConfig: JavalinConfig) {

@@ -2,6 +2,8 @@ package org.example
 
 import io.javalin.http.Context
 import org.example.data.Channel
+import org.example.data.Entry
+import org.example.data.User
 import org.example.data.UserChannelLink
 fun createChannel(context: Context) {
     val go = testAuthentication(context)
@@ -112,19 +114,7 @@ fun unsubscribe(context: Context) {
         context.result("Invalid channel ID.")
         return
     }
-    user?.userChannelLinks?.forEach {
-        val channel = it.channel
-        if (channel != null) {
-            if (channel.id == channelId.toInt()) {
-                go2 = true
-            }
-        }
-    }
-    if (!go2) {
-        context.status(400)
-        context.result("You haven't subscribed to this channel.")
-        return
-    }
+    cleanChannel(channelDao.queryForId(channelId.toInt())!!, user)
     user?.userChannelLinks?.forEach {
         val channel = it.channel
         if (channel != null) {
@@ -156,4 +146,46 @@ fun getChannels(context: Context) {
     }
     context.status(200)
     context.json(channels)
+}
+
+fun cleanChannel(channel: Channel, user: User?) {
+    user?.userChannelLinks?.forEach{
+        if (it.channel==channel) {
+            userChannelLinkDao.delete(it)
+        }
+    }
+    user?.filters?.forEach{
+        if (it.filterChannelLinks!=null) {
+            it.filterChannelLinks?.forEach{
+                if (it.channel==channel) {
+                    filterChannelLinkDao.delete(it)
+                }
+            }
+        }
+        it.filterEntryLinks?.forEach{
+            if (it.entry?.channel==channel) {
+                filterEntryLinkDao.delete(it)
+            }
+        }
+    }
+    var count = 0
+    channel.userChannelLinks?.forEach{
+        count++
+    }
+    if (count==0) {
+        channel.entries?.forEach{
+            cleanEntry(it)
+        }
+        channel.filterChannelLinks?.forEach{
+            filterChannelLinkDao.delete(it)
+        }
+        channelDao.delete(channel)
+    }
+}
+
+fun cleanEntry(entry: Entry) {
+    entry.filterEntryLinks?.forEach{
+        filterEntryLinkDao.delete(it)
+    }
+    entryDao.delete(entry)
 }

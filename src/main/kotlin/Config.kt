@@ -50,6 +50,7 @@ class Config {
     var securitySettings: SecuritySettings = SecuritySettings()
     val version: Int = 1
     val webUrl: String = ""
+    val maxEntries = 100
 
     companion object {
         @JvmStatic
